@@ -1,0 +1,91 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+{% load event_tags %}
+{% load account_tags %}
+
+{% block body %}
+  <style>
+    input {
+      border: none;
+    }
+    h1 {
+      font-size: 14pt;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 5pt;
+      margin-bottom: 5pt;
+    }
+    td, th {
+      border: 1px solid #999999;
+      text-align: left;
+      padding: 0;
+    }
+    td.booked {
+      background: #99ff99;
+      color: #99ff99;
+    }
+    form {
+      overflow: auto;
+      width: 100%;
+    }
+  </style>
+  <form method="post">
+   {% csrf_token %}
+   <button type="submit" name="submit">Save</button>
+   <table>
+    <tr>
+     <th>E-mail</th>
+     <th>Phone</th>
+     {% for date in event.sorted_dates %}
+       <th>{{ date.date.day }}</th>
+     {% endfor %}
+    </tr>
+    <tr>
+     <td><input type="text" name="email" /></td>
+     <td><input type="text" name="phone" /></td>
+     {% for date in event.sorted_dates %}
+       <td><input type='checkbox' name='days' value='{{ date.date }}' /</td>
+     {% endfor %}
+    </tr>
+    {% for booking in event.bookings.all %}
+     <tr>
+      <td>{{ booking.booker.email }}</td>
+      <td>{{ booking.booker.phone }}</td>
+      {% for date in event.sorted_dates %}
+        {% if booking.dates|event_get_date:date %}
+	  <td class='booked'>X</td>
+        {% else %}
+	  <td class='unbooked'>&nbsp;</td>
+        {% endif %}
+      {% endfor %}
+     </tr>
+    {% endfor %}
+    <tr>
+     <td></td>
+     <th>Total:</th>
+     {% for date in event.sorted_dates %}
+       {% if date.bookings.count > 5 %}
+         <td style='background: #00ff00;'>{{date.bookings.count}}</td>
+       {% else %}{% if date.bookings.count > 4 %}
+         <td style='background: #44ff44;'>{{date.bookings.count}}</td>
+       {% else %}{% if date.bookings.count > 3 %}
+         <td style='background: #88ff88;'>{{date.bookings.count}}</td>
+       {% else %}{% if date.bookings.count > 2 %}
+         <td style='background: #ccffcc;'>{{date.bookings.count}}</td>
+       {% else %}{% if date.bookings.count > 1 %}
+         <td style='background: #eeffee;'>{{date.bookings.count}}</td>
+       {% else %}
+         <td style='background: #ff0000;'>{{date.bookings.count}}</td>
+       {% endif %}
+       {% endif %}
+       {% endif %}
+       {% endif %}
+       {% endif %}
+     {% endfor %}
+    </tr>
+
+   </table>
+  </form>
+{% endblock %}
