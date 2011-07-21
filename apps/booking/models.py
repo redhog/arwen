@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import django.db.models
 import django.contrib.auth.models
+import account.models
 from django.utils.translation import ugettext_lazy as _
 
 class Event(django.db.models.Model):

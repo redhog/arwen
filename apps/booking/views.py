@@ -15,6 +15,7 @@ import django.utils.http
 import pinax.core.utils
 send_mail = pinax.core.utils.get_send_mail()
 import pinax.apps.account.utils
+import account.models
 
 _has_openid = pinax.apps.account.utils.has_openid
 def has_openid(request):
@@ -73,8 +74,14 @@ def event(request, event_id = None):
 
             u.email = email
             u.username = username
-            u.phone = phone
             u.save()
+
+            try:
+                i = u.info
+                i.phone = phone
+                i.save()
+            except:
+                account.model.UserInfo(user = u, phone = phone).save()
 
             try:
                 event_booking = u.event_bookings.get(event__id = event_id)

@@ -35,6 +35,8 @@
       padding-right: 2px;
     }
   </style>
+  <h1>{{event.name}}</h1>
+  <p>{{event.description|safe}}</p>
   <form method="post">
    {% csrf_token %}
    <button type="submit" name="submit">Save</button>
@@ -88,7 +90,7 @@
      <tr>
       <td>{{ booking.booker.username }}</td>
       <td>{{ booking.booker.email }}</td>
-      <td colspan="2">{{ booking.booker.phone }}</td>
+      <td colspan="2">{{ booking.booker.info.phone }}</td>
       {% for date in event.sorted_dates %}
         {% if booking.dates|event_get_date:date %}
 	  <td class='booked'>X</td>
