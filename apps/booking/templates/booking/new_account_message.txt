@@ -1,0 +1,9 @@
+{% load i18n %}{% url acct_passwd_reset_key uidb36=uid,key=temp_key as password_reset_url %}{% blocktrans %}New account created{% endblocktrans %}
+
+{% blocktrans %}You're receiving this e-mail becuase you or someone else has booked you in for an event at our site.
+It can be safely ignored if you did not request this. Click the link below to set your password.
+
+http://{{ domain }}{{ password_reset_url }}
+
+Thanks for using our site!
+{% endblocktrans %}

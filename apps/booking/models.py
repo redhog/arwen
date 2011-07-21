@@ -8,6 +8,10 @@ class Event(django.db.models.Model):
     description = django.db.models.TextField(_('description'))
     owner = django.db.models.ForeignKey(django.contrib.auth.models.User, related_name="events")
 
+    min_bookings = django.db.models.IntegerField(_('min_bookings'))
+    ideal_bookings = django.db.models.IntegerField(_('ideal_bookings'))
+    max_bookings = django.db.models.IntegerField(_('max_bookings'))
+
     @property
     def sorted_dates(self):
         return self.dates.order_by("date")
@@ -18,6 +22,30 @@ class Event(django.db.models.Model):
 class EventDate(django.db.models.Model):
     date = django.db.models.DateField(_('date'))
     event = django.db.models.ForeignKey(Event, related_name="dates")
+
+    @property
+    def color(self):
+        count = self.bookings.count() - self.event.min_bookings
+        ideal = self.event.ideal_bookings - self.event.min_bookings
+        maxb = self.event.max_bookings - self.event.min_bookings
+
+        if count < 0 or count > maxb:
+            return "#ff0000"
+
+        if count <= ideal:
+            p = float(count) / ideal
+        else:
+            count -= ideal
+            maxb -= ideal
+            p = float(maxb - count) / maxb
+        
+        p = int(p * 4)
+        return ['#eeffee',
+                '#ccffcc',
+                '#88ff88',
+                '#44ff44',
+                '#00ff00'][p]
+
 
     def __unicode__(self):
         return "%s @ %s" % (self.event, self.date)
