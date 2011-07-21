@@ -96,29 +96,10 @@ def event(request, event_id = None):
                 d = e.dates.get(date=date)
                 booking.models.EventDateBooking(event_booking = event_booking, date=d).save()
 
-        ed = []
-        last_year = {'year': None, 'nr_dates':0}
-        last_month = {'month': None, 'nr_dates':0}
-        for date in e.sorted_dates:
-            date = date.date
-            if date.year != last_year['year']:
-                last_month = {'month':date.month, 'dates':[date], 'nr_dates':1}
-                last_year = {'year':date.year, 'months':[last_month], 'nr_dates':1}
-                ed.append(last_year)
-            elif date.month != last_month['month']:
-                last_month = {'month':date.month, 'dates':[date], 'nr_dates':1}
-                last_year['months'].append(last_month)
-                last_year['nr_dates'] += 1
-            else:
-                last_month['dates'].append(date)
-                last_month['nr_dates'] += 1
-                last_year['nr_dates'] += 1
-
         return django.shortcuts.render_to_response(
             "booking/event.html", 
             {
                 "event": e,
-                "event_dates": ed,
                 "event_booking": eb,
                 "user": u,
                 'static_url': settings.STATIC_URL,
