@@ -14,6 +14,14 @@ import django.template.loader
 import django.utils.http
 import pinax.core.utils
 send_mail = pinax.core.utils.get_send_mail()
+import pinax.apps.account.utils
+
+_has_openid = pinax.apps.account.utils.has_openid
+def has_openid(request):
+    if request.user.is_anonymous():
+        return False
+    return _has_openid(request)
+pinax.apps.account.utils.has_openid = has_openid
 
 def event(request, event_id = None):
     if event_id is None:
@@ -38,14 +46,13 @@ def event(request, event_id = None):
                 eb = ebs[0]
 
         if request.method == "POST":
+            username = request.POST['username'].lower()
             email = request.POST['email'].lower()
             phone = request.POST['phone']
             dates = [datetime.datetime(*[int(x) for x in day.split("-")]) for day in request.POST.getlist("days")]
 
-            if not u.is_anonymous():
-                u.email = email
-            else:
-                u = django.contrib.auth.models.User(username=email.replace("@", "_"), email=email)
+            if u.is_anonymous():
+                u = django.contrib.auth.models.User(username=username, email=email)
                 u.set_unusable_password()
                 u.save()
 
@@ -64,6 +71,8 @@ def event(request, event_id = None):
 
                 send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [u.email], priority="high")
 
+            u.email = email
+            u.username = username
             u.phone = phone
             u.save()
 
