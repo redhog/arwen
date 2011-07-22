@@ -40,11 +40,6 @@ def event(request, event_id = None):
     else:
         e = django.shortcuts.get_object_or_404(booking.models.Event, id=event_id)
         u = request.user
-        eb = None
-        if not u.is_anonymous():
-            ebs = list(u.event_bookings.filter(event__id = event_id))
-            if ebs:
-                eb = ebs[0]
 
         if request.method == "POST":
             username = request.POST['username'].lower()
@@ -74,14 +69,15 @@ def event(request, event_id = None):
 
             u.email = email
             u.username = username
+
             u.save()
 
-            try:
-                i = u.info
+            i = u.info
+            if i:
                 i.phone = phone
                 i.save()
-            except:
-                account.model.UserInfo(user = u, phone = phone).save()
+            else:
+                account.models.UserInfo(user = u, phone = phone).save()
 
             try:
                 event_booking = u.event_bookings.get(event__id = event_id)
@@ -100,7 +96,6 @@ def event(request, event_id = None):
             "booking/event.html", 
             {
                 "event": e,
-                "event_booking": eb,
                 "user": u,
                 'static_url': settings.STATIC_URL,
                 },

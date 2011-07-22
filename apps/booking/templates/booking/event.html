@@ -40,6 +40,7 @@
   <form method="post">
    {% csrf_token %}
    <button type="submit" name="submit">Save</button>
+
    <table>
     <tr>
      <td></td>
@@ -80,9 +81,11 @@
      <td colspan="2"><input type="text" name="phone" value="{{request.user.phone}}" /></td>
      {% for date in event.sorted_dates %}
        <td><input type='checkbox' name='days' value='{{ date.date }}'
-         {% if event_booking and event_booking.dates|event_get_date:date %}
-	   checked="true"
-         {% endif %}
+         {% with event|event_get_booking:request.user as event_booking %}
+           {% if event_booking and event_booking.dates|event_get_date:date %}
+  	     checked="true"
+           {% endif %}
+         {% endwith %}
        /></td>
      {% endfor %}
     </tr>
