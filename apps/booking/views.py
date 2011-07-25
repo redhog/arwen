@@ -79,7 +79,7 @@ def event(request, event_id = None):
 
         if request.method == "POST":
             form = booking.forms.EventForm(request.user, group, request.POST, instance=e)
-            if form.is_valid():
+            if e.owner.id == u.id and form.is_valid():
                 e = form.save()
                 if form.cleaned_data['add_date']:
                     if not e.dates.filter(date = form.cleaned_data['add_date']).count():
