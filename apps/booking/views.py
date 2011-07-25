@@ -5,6 +5,7 @@ import django.contrib.auth.decorators
 import django.contrib.auth.models
 import django.template
 import booking.models
+import booking.forms
 import settings
 import datetime
 import django.contrib.auth.tokens
@@ -16,6 +17,10 @@ import pinax.core.utils
 send_mail = pinax.core.utils.get_send_mail()
 import pinax.apps.account.utils
 import account.models
+import django.contrib.messages
+import django.http
+import django.core.urlresolvers
+from django.utils.translation import ugettext_lazy as _
 
 _has_openid = pinax.apps.account.utils.has_openid
 def has_openid(request):
@@ -24,24 +29,62 @@ def has_openid(request):
     return _has_openid(request)
 pinax.apps.account.utils.has_openid = has_openid
 
-def event(request, event_id = None):
-    if event_id is None:
-        ee = booking.models.Event.objects.all()
-        u = request.user
-
-        return django.shortcuts.render_to_response(
-            "booking/events.html", 
-            {
-                "events": ee,
-                "user": u,
-                'static_url': settings.STATIC_URL,
-                },
-            context_instance=django.template.RequestContext(request))
+def group_and_bridge(request):
+    """
+    Given the request we can depend on the GroupMiddleware to provide the
+    group and bridge.
+    """
+    
+    # be group aware
+    group = getattr(request, "group", None)
+    if group:
+        bridge = request.bridge
     else:
-        e = django.shortcuts.get_object_or_404(booking.models.Event, id=event_id)
+        bridge = None
+    
+    return group, bridge
+
+def group_context(group, bridge):
+    # @@@ use bridge
+    ctx = {
+        "group": group,
+    }
+    if group:
+        ctx["group_base"] = bridge.group_base_template()
+    return ctx
+
+def group_is_member(request, group):
+    if not request.user.is_authenticated():
+        return False
+    else:
+        if group:
+            return group.user_is_member(request.user)
+        else:
+            return True
+
+
+def event(request, event_id = None):
+    group, bridge = group_and_bridge(request)
+    is_member = group_is_member(request, group)
+
+    if group:
+        events = group.content_objects(booking.models.Event)
+    else:
+        events = booking.models.Event.objects.all()
+
+    if event_id is not None:
+        e = events.get(id = event_id)
+
         u = request.user
 
         if request.method == "POST":
+            form = booking.forms.EventForm(request.user, group, request.POST, instance=e)
+            if form.is_valid():
+                e = form.save()
+                if form.cleaned_data['add_date']:
+                    if not e.dates.filter(date = form.cleaned_data['add_date']).count():
+                        booking.models.EventDate(date=form.cleaned_data['add_date'], event=e).save()
+
             username = request.POST['username'].lower()
             email = request.POST['email'].lower()
             phone = request.POST['phone']
@@ -72,7 +115,10 @@ def event(request, event_id = None):
 
             u.save()
 
-            i = u.info
+            try:
+                i = u.info
+            except u.DoesNotExist:
+                i = None
             if i:
                 i.phone = phone
                 i.save()
@@ -92,11 +138,60 @@ def event(request, event_id = None):
                 d = e.dates.get(date=date)
                 booking.models.EventDateBooking(event_booking = event_booking, date=d).save()
 
+        else:
+            form =booking.forms.EventForm(request.user, group, instance=e)
+
         return django.shortcuts.render_to_response(
             "booking/event.html", 
             {
                 "event": e,
                 "user": u,
                 'static_url': settings.STATIC_URL,
+                "form": form,
                 },
             context_instance=django.template.RequestContext(request))
+
+            
+    else:
+        return django.shortcuts.render_to_response("booking/event_list.html", {
+            "group": group,
+            "events": events,
+            "user": request.user,
+            "is_member": is_member,
+        }, context_instance=django.template.RequestContext(request))
+
+def add_event(request):
+    group, bridge = group_and_bridge(request)
+    is_member = group_is_member(request, group)
+
+    if request.method == "POST":
+        if request.user.is_authenticated():
+            form = booking.forms.EventForm(request.user, group, request.POST)
+            if form.is_valid():
+                event = form.save(commit=False)
+                event.group = group
+                event.owner = request.user
+                event.save()
+                django.contrib.messages.add_message(request, django.contrib.messages.SUCCESS,
+                                                    _("added event '%s'") % event.name
+                                                    )
+                kwarg = {"event_id":event.id}
+                if group:
+                    redirect_to = bridge.reverse("booking_event", group, kwarg)
+                else:
+                    redirect_to = django.core.urlresolvers.reverse("booking_event", kwarg)
+
+                return django.http.HttpResponseRedirect(redirect_to)
+
+
+    form = booking.forms.EventForm(request.user, group)
+    
+    ctx = group_context(group, bridge)
+    ctx.update({
+        "is_member": is_member,
+        "form": form,
+    })
+    
+    return django.shortcuts.render_to_response("booking/event_add.html", django.template.RequestContext(request, ctx))
+
+

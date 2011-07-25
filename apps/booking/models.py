@@ -3,8 +3,28 @@ import django.db.models
 import django.contrib.auth.models
 import account.models
 from django.utils.translation import ugettext_lazy as _
+import django.contrib.contenttypes
+import django.contrib.contenttypes.models
 
 class Event(django.db.models.Model):
+    # The following three fields are required for being group aware.
+    # We use a nullable generic foreign key to enable it to be optional
+    # and we don't know what group model it will point to.
+    object_id = django.db.models.IntegerField(null=True)
+    content_type = django.db.models.ForeignKey(django.contrib.contenttypes.models.ContentType, null=True)
+    group = django.contrib.contenttypes.generic.GenericForeignKey("content_type", "object_id")
+
+    @property
+    def slug(self):
+        return self.id
+
+    def get_absolute_url(self, group=None):
+        kwargs = {"event_id": self.id}
+        if group:
+            return group.content_bridge.reverse("booking.views.event", group, kwargs)
+        return reverse("booking.views.event", kwargs=kwargs)
+
+
     name = django.db.models.CharField(_('name'), max_length=256)
     description = django.db.models.TextField(_('description'))
     owner = django.db.models.ForeignKey(django.contrib.auth.models.User, related_name="events")

@@ -3,6 +3,8 @@
 {% load i18n %}
 {% load event_tags %}
 {% load account_tags %}
+{% load group_tags %}
+{% load uni_form_tags %}
 
 {% block body %}
   <style>
@@ -35,10 +37,18 @@
       padding-right: 2px;
     }
   </style>
-  <h1>{{event.name}}</h1>
-  <p>{{event.description|safe}}</p>
-  <form method="post">
+
+  <form method="post" class="uniForm">
    {% csrf_token %}
+
+   {% if event.owner.id == request.user.id %}
+     {{ form.media }}
+     {{ form|as_uni_form }}
+   {% else %}
+     <h1>{{event.name}}</h1>
+     <p>{{event.description|safe}}</p>
+   {% endif %}
+
    <button type="submit" name="submit">Save</button>
 
    <table>

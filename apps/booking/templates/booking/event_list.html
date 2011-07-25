@@ -1,0 +1,17 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+{% load event_tags %}
+{% load account_tags %}
+{% load group_tags %}
+
+{% block body %}
+  {% if is_member %}
+    <a href="{% groupurl booking_event_add group %}">Add another event</a><br>
+  {% endif %}
+  <dl>
+    {% for event in events %}
+      <dt><a href="{% groupurl booking_event group event_id=event.id %}">{{ event.name }}</a></dt><dd>{{ event.description }}</dd>
+    {% endfor %}
+  </dl>
+{% endblock %}

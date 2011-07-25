@@ -1,0 +1,31 @@
+{% extends "site_base.html" %}
+
+{% load i18n %}
+{% load event_tags %}
+{% load account_tags %}
+{% load group_tags %}
+{% load uni_form_tags %}
+
+{% block head_title %}Add Event{% endblock %}
+
+{% block body %}
+    <h1>Add Event</h1>
+
+    {% if is_member %}
+
+         <div class="main-form">
+            <form method="POST" action="" id="event_form" class="uniForm">
+                {% csrf_token %}
+                <div class="form_block">
+                    {{ form.media }}
+                    {{ form|as_uni_form }}
+                    <input type="submit" value="{% trans 'Add event' %}"/>
+                </div>
+            </form>
+        </div>
+
+    {% else %}
+        <p>{% trans 'You are not a member and so cannot add an event.' %}</p>
+    {% endif %}
+
+{% endblock %}
