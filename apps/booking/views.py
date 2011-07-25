@@ -146,6 +146,8 @@ def event(request, event_id = None):
             {
                 "event": e,
                 "user": u,
+                "group": group,
+                "is_member": is_member,
                 'static_url': settings.STATIC_URL,
                 "form": form,
                 },
@@ -159,6 +161,32 @@ def event(request, event_id = None):
             "user": request.user,
             "is_member": is_member,
         }, context_instance=django.template.RequestContext(request))
+
+def remove_event_date(request, event_id, date_id):
+    group, bridge = group_and_bridge(request)
+
+    is_member = group_is_member(request, group)
+
+    if group:
+        events = group.content_objects(booking.models.Event)
+    else:
+        events = booking.models.Event.objects.all()
+
+    e = events.get(id = event_id)
+    u = request.user
+    assert e.owner.id == u.id
+
+    for date in e.dates.filter(id = date_id):
+        date.delete()
+    
+    kwarg = {"event_id":e.id}
+    if group:
+        redirect_to = bridge.reverse("booking_event", group, kwarg)
+    else:
+        redirect_to = django.core.urlresolvers.reverse("booking_event", kwarg)
+            
+    return django.http.HttpResponseRedirect(redirect_to)
+
 
 def add_event(request):
     group, bridge = group_and_bridge(request)

@@ -43,13 +43,12 @@ class Event(django.db.models.Model):
         last_year = {'year': None, 'nr_dates':0}
         last_month = {'month': None, 'nr_dates':0}
         for date in self.sorted_dates:
-            date = date.date
-            if date.year != last_year['year']:
-                last_month = {'month':date.month, 'dates':[date], 'nr_dates':1}
-                last_year = {'year':date.year, 'months':[last_month], 'nr_dates':1}
+            if date.date.year != last_year['year']:
+                last_month = {'month':date.date.month, 'dates':[date], 'nr_dates':1}
+                last_year = {'year':date.date.year, 'months':[last_month], 'nr_dates':1}
                 ed.append(last_year)
-            elif date.month != last_month['month']:
-                last_month = {'month':date.month, 'dates':[date], 'nr_dates':1}
+            elif date.date.month != last_month['month']:
+                last_month = {'month':date.date.month, 'dates':[date], 'nr_dates':1}
                 last_year['months'].append(last_month)
                 last_year['nr_dates'] += 1
             else:

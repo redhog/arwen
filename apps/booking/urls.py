@@ -7,4 +7,5 @@ urlpatterns = django.conf.urls.defaults.patterns(
     django.conf.urls.defaults.url(r'^booking/?$', 'booking.views.event', name="booking_event_list"),
     django.conf.urls.defaults.url(r'^booking/(?P<event_id>\d+)/?$', 'booking.views.event', name="booking_event"),
     django.conf.urls.defaults.url(r'^booking/add/?$', 'booking.views.add_event', name="booking_event_add"),
+    django.conf.urls.defaults.url(r'^booking/(?P<event_id>\d+)/remove-date/(?P<date_id>\d+)/?$', 'booking.views.remove_event_date', name="booking_event_remove_date"),
 )

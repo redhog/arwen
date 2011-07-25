@@ -80,7 +80,11 @@
      {% for year in event.date_tree %}
        {% for month in year.months %}
          {% for date in month.dates %}
-           <th>{{ date.day }}</th>
+           {% if event.owner.id == request.user.id %}
+             <th><a href="{% groupurl booking_event_remove_date group event_id=event.id date_id=date.id %}">{{ date.date.day }}</a></th>
+           {% else %}
+             <th>{{ date.date.day }}</th>
+           {% endif %}
          {% endfor %}
        {% endfor %}
      {% endfor %}
