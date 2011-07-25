@@ -78,7 +78,7 @@ def event(request, event_id = None):
         u = request.user
 
         if request.method == "POST":
-            form = booking.forms.EventForm(request.user, group, request.POST, instance=e)
+            form = booking.forms.EditEventForm(request.user, group, request.POST, instance=e)
             if e.owner.id == u.id and form.is_valid():
                 e = form.save()
                 if form.cleaned_data['add_date']:
@@ -139,7 +139,7 @@ def event(request, event_id = None):
                 booking.models.EventDateBooking(event_booking = event_booking, date=d).save()
 
         else:
-            form =booking.forms.EventForm(request.user, group, instance=e)
+            form = booking.forms.EditEventForm(request.user, group, instance=e)
 
         return django.shortcuts.render_to_response(
             "booking/event.html", 

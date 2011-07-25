@@ -9,11 +9,9 @@ class EventForm(django.forms.ModelForm):
         
         super(EventForm, self).__init__(*args, **kwargs)
 
-    add_date = django.forms.DateField(initial=datetime.date.today)
-    
     class Meta:
         model = booking.models.Event
-        fields = ["name", "description", "min_bookings", "ideal_bookings", "max_bookings", "add_date"]
+        fields = ["name", "description", "min_bookings", "ideal_bookings", "max_bookings"]
     
     def clean(self):
         self.check_group_membership()
@@ -25,7 +23,7 @@ class EventForm(django.forms.ModelForm):
             raise django.forms.ValidationError("You must be a member to create events")
 
 class EditEventForm(EventForm):
-    add_date = django.forms.DateField()
+    add_date = django.forms.DateField(required=False)
     
     class Meta(EventForm.Meta):
         fields = EventForm.Meta.fields + ["add_date"]

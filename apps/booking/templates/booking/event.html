@@ -41,11 +41,17 @@
   <form method="post" class="uniForm">
    {% csrf_token %}
 
+   <h1>
+     {{event.name}}
+     {% if group %}
+       for <a href="{{ group.get_absolute_url }}">{{ group }}</a>
+     {% endif %}
+   </h1>
+
    {% if event.owner.id == request.user.id %}
      {{ form.media }}
      {{ form|as_uni_form }}
    {% else %}
-     <h1>{{event.name}}</h1>
      <p>{{event.description|safe}}</p>
    {% endif %}
 
@@ -105,7 +111,7 @@
     </tr>
     {% for booking in event.bookings.all %}
      <tr>
-      <td>{{ booking.booker.username }}</td>
+      <td>{{ booking.booker.id }} :: {{ booking.booker.username }}</td>
       <td>{% if booking.booker.info.public_email or request.user.is_superuser %}{{ booking.booker.email }}{% else %}XXX{% endif %}</td>
       <td colspan="2">{% if booking.booker.info.public_phone or request.user.is_superuser %}{{ booking.booker.info.phone }}{% else %}XXX{% endif %}</td>
       {% for date in event.sorted_dates %}
