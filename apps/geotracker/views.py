@@ -21,7 +21,7 @@ def view_journey(request, journey_id):
     return django.shortcuts.render_to_response(
         "geotracker/view_journey.html",
         {
-            "journey": journey
+            "journey": j
             },
         django.template.RequestContext(request))
 
