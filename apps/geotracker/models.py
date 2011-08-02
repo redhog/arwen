@@ -32,9 +32,17 @@ class Path(django.contrib.gis.db.models.Model):
     name = django.contrib.gis.db.models.CharField(_('name'), max_length=256)
     description = django.contrib.gis.db.models.TextField(_('description'))
 
-    @property
-    def as_line_string(self):
+    def get_as_geosgeometry(self):
         return django.contrib.gis.geos.LineString([point.point for point in self.points.order_by('timestamp')])
+
+    def set_as_geosgeometry(self, value):
+        pass
+        #if value.wkt != self.as_geosgeometry.wkt: 
+        #     for coord in value.coords:
+
+    as_geosgeometry = property(get_as_geosgeometry, set_as_geosgeometry)
+
+
 
     def __unicode__(self):
         return self.name

@@ -8,9 +8,11 @@
 
 {% block extra_head_base %}
   {{ block.super }}
+
   <link rel="stylesheet" href="{{ STATIC_URL }}css/style.css" />
   <link rel="stylesheet" href="{{ STATIC_URL }}js/OpenLayers/theme/default/style.css" type="text/css"> 
   <script src="{{ STATIC_URL }}js/OpenLayers/OpenLayers.js"></script>
+
   <script type="text/javascript"> 
     var map, layer;
     $(document).ready(function () {
