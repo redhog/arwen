@@ -42,8 +42,6 @@ class Path(django.contrib.gis.db.models.Model):
 
     as_geosgeometry = property(get_as_geosgeometry, set_as_geosgeometry)
 
-
-
     def __unicode__(self):
         return self.name
 
@@ -60,8 +58,8 @@ class Journey(django.contrib.gis.db.models.Model):
     description = django.contrib.gis.db.models.TextField(_('description'))
 
     @property
-    def as_multi_line_string(self):
-        return django.contrib.gis.geos.MultiLineString([path.as_line_string for path in self.paths.order_by('timestamp')])
+    def as_geosgeometry(self):
+        return django.contrib.gis.geos.MultiLineString([path.as_geosgeometry for path in self.paths.order_by('timestamp')])
 
     def __unicode__(self):
         return self.name

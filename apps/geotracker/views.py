@@ -26,3 +26,11 @@ def view_journey(request, journey_id):
         django.template.RequestContext(request))
 
 
+@django.contrib.auth.decorators.login_required
+def export_journey(request, journey_id, format):
+    j = django.shortcuts.get_object_or_404(geotracker.models.Journey, id=journey_id)
+
+    if format == "geojson":
+        return django.http.HttpResponse(j.as_geosgeometry.json, mimetype="text/json")
+
+    return django.http.HttpResponse("Unknown format", status=400, mimetype="text/plain")

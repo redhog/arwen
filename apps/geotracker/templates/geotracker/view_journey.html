@@ -25,6 +25,28 @@
 	  map.getProjectionObject()
 	), 12
       );
+
+       var styles = new OpenLayers.StyleMap({
+	   "default": {
+	       strokeWidth: 2
+	   },
+	   "select": {
+	       strokeColor: "#0099cc",
+	       strokeWidth: 4
+	   }
+       });
+
+      var vectors = new OpenLayers.Layer.Vector("Lines", {
+	  strategies: [new OpenLayers.Strategy.Fixed()],
+	  protocol: new OpenLayers.Protocol.HTTP({
+	      url: "{% url geotracker.views.export_journey journey_id=journey.id format="geojson" %}",
+	      format: new OpenLayers.Format.GeoJSON()
+	  }),
+	  styleMap: styles
+      });
+
+      map.addLayer(vectors);
+
     });
   </script>
 {% endblock %}
