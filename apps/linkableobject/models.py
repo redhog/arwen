@@ -20,7 +20,7 @@ class LinkableObjectMixin(object):
     def get_class_context(cls):
         if hasattr(cls, "class_context"):
             return cls.class_context
-        return cls.__module__.split('.') + [cls.__name__]
+        return cls.__module__.lower().split('.') + [cls.__name__.lower()]
 
     _template_for_display_context_cache = {}
     @classmethod

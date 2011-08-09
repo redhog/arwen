@@ -1,5 +1,6 @@
 {% extends "site_base.html" %}
 
+{% load linkableobject_tags %}
 {% load i18n %}
 {% load event_tags %}
 {% load account_tags %}
@@ -53,5 +54,6 @@
 
 
 {% block body %}
+  {{ journey|display }}
   <div id="map" class="smallmap"></div>
 {% endblock %}
