@@ -1,0 +1,3 @@
+{% load linkableobject_tags %}
+
+<a href="{{ obj.get_absolute_url }}">{% if obj.title %}{{ obj.title }}{% else %}{{ obj }}{% endif %}</a>

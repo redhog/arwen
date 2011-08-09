@@ -1,0 +1,10 @@
+{% load linkableobject_tags %}
+
+{% for name, linkset in obj|get_links:display_context %}
+  <h1>{{ linkset.description }}</h1>
+  <ul>
+    {% for link in linkset.values %}
+      <li>{{ link|display_link:display_context }}</li>
+    {% endfor %}
+  </ul>
+{% endfor %}
