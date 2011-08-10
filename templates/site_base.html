@@ -4,6 +4,9 @@
 {% load analytics %}
 
 {% block extra_head_base %}
+    %WidgetTagMiddleware.head.css%
+    %WidgetTagMiddleware.head.javascript%
+
     <script src="{{ STATIC_URL }}js/jquery.js"></script>
     <link rel="stylesheet" href="{{ STATIC_URL }}css/site_tabs.css" />
     <link rel="stylesheet" href="{{ STATIC_URL }}pinax/css/avatar.css" />

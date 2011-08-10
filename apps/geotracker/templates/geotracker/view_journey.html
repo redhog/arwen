@@ -7,53 +7,6 @@
 {% load group_tags %}
 {% load uni_form_tags %}
 
-{% block extra_head_base %}
-  {{ block.super }}
-
-  <link rel="stylesheet" href="{{ STATIC_URL }}css/style.css" />
-  <link rel="stylesheet" href="{{ STATIC_URL }}js/OpenLayers/theme/default/style.css" type="text/css"> 
-  <script src="{{ STATIC_URL }}js/OpenLayers/OpenLayers.js"></script>
-
-  <script type="text/javascript"> 
-    var map, layer;
-    $(document).ready(function () {
-      map = new OpenLayers.Map('map');
-      layer = new OpenLayers.Layer.OSM("Simple OSM Map");
-      map.addLayer(layer);
-      map.setCenter(
-	new OpenLayers.LonLat(-71.147, 42.472).transform(
-	  new OpenLayers.Projection("EPSG:4326"),
-	  map.getProjectionObject()
-	), 12
-      );
-
-       var styles = new OpenLayers.StyleMap({
-	   "default": {
-	       strokeWidth: 2
-	   },
-	   "select": {
-	       strokeColor: "#0099cc",
-	       strokeWidth: 4
-	   }
-       });
-
-      var vectors = new OpenLayers.Layer.Vector("Lines", {
-	  strategies: [new OpenLayers.Strategy.Fixed()],
-	  protocol: new OpenLayers.Protocol.HTTP({
-	      url: "{% url geotracker.views.export_journey journey_id=journey.id format="geojson" %}",
-	      format: new OpenLayers.Format.GeoJSON()
-	  }),
-	  styleMap: styles
-      });
-
-      map.addLayer(vectors);
-
-    });
-  </script>
-{% endblock %}
-
-
 {% block body %}
-  {{ journey|display }}
-  <div id="map" class="smallmap"></div>
+  {% display journey "" %}
 {% endblock %}

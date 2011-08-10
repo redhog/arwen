@@ -42,14 +42,35 @@ class LinkableObjectMixin(object):
     def get_links(self, display_context):
         return {}
 
-    def display(self, display_context):
-        return self.template_for_display_context("display", display_context).render(django.template.Context({"obj": self, "display_context": display_context}))
+    def display(self, display_context, context = None):
+        if not context: context = django.template.Context()
+        context.push()
+        try:
+            context["obj"] = self
+            context["display_context"] = display_context
+            return self.template_for_display_context("display", display_context).render(context)
+        finally:
+            context.pop()
 
-    def display_links(self, display_context):
-        return self.template_for_display_context("display_links", display_context).render(django.template.Context({"obj": self, "display_context": display_context}))
+    def display_links(self, display_context, context = None):
+        if not context: context = django.template.Context()
+        context.push()
+        try:
+            context["obj"] = self
+            context["display_context"] = display_context
+            return self.template_for_display_context("display_links", display_context).render(context)
+        finally:
+            context.pop()
 
-    def display_link(self, display_context):
-        return self.template_for_display_context("display_link", display_context).render(django.template.Context({"obj": self, "display_context": display_context}))
+    def display_link(self, display_context, context = None):
+        if not context: context = django.template.Context()
+        context.push()
+        try:
+            context["obj"] = self
+            context["display_context"] = display_context
+            return self.template_for_display_context("display_link", display_context).render(context)
+        finally:
+            context.pop()
 
 class LinkableModelMixin(LinkableObjectMixin):
     @classmethod

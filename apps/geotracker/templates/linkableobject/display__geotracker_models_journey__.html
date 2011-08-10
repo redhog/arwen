@@ -1,0 +1,62 @@
+{% load linkableobject_tags %}
+{% load i18n %}
+{% load event_tags %}
+{% load account_tags %}
+{% load group_tags %}
+{% load uni_form_tags %}
+{% load widgettag_tags %}
+{% load datatypes %}
+
+{% with STATIC_URL|aadd:"css/style.css" as url %}{% widget_addcssfile url %}{% endwith %}
+{% with STATIC_URL|aadd:"js/OpenLayers/theme/default/style.css" as url %}{% widget_addcssfile url %}{% endwith %}
+{% with STATIC_URL|aadd:"js/OpenLayers/OpenLayers.js" as url %}{% widget_addjsfile url %}{% endwith %}
+
+{% widget_uniquename display_id "display_geotracker_journey" %}
+
+<script type="text/javascript"> 
+  var map_{{ display_id }};
+  $(document).ready(function () {
+    self = map_{{ display_id }};
+    self.map = new OpenLayers.Map('map_{{ display_id }}');
+    self.layer = new OpenLayers.Layer.OSM("Simple OSM Map");
+    self.map.addLayer(self.layer);
+    self.map.setCenter(
+      new OpenLayers.LonLat(-71.147, 42.472).transform(
+	new OpenLayers.Projection("EPSG:4326"),
+	self.map.getProjectionObject()
+      ), 12
+    );
+
+     var styles = new OpenLayers.StyleMap({
+	 "default": {
+	     strokeWidth: 2
+	 },
+	 "select": {
+	     strokeColor: "#0099cc",
+	     strokeWidth: 4
+	 }
+     });
+
+    var vectors = new OpenLayers.Layer.Vector("Lines", {
+	strategies: [new OpenLayers.Strategy.Fixed()],
+	protocol: new OpenLayers.Protocol.HTTP({
+	    url: "{% url geotracker.views.export_journey journey_id=journey.id format="geojson" %}",
+	    format: new OpenLayers.Format.GeoJSON()
+	}),
+	styleMap: styles
+    });
+
+    self.map.addLayer(vectors);
+  });
+</script>
+
+<div class="object">
+  <h1>{% display_link obj display_context %}</h1>
+  {% if obj.description %}
+    {{ obj.description }}
+  {% endif %}
+  <div id="map_{{ display_id }}" class="smallmap"></div>
+  <div class="links">
+    {% display_links obj display_context %}
+  </div>
+</div>
