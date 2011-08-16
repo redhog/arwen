@@ -14,9 +14,9 @@
 {% widget_uniquename display_id "display_geotracker_journey" %}
 
 <script type="text/javascript"> 
-  var map_{{ display_id }};
+  var map_{{ display_id }} = {};
   $(document).ready(function () {
-    self = map_{{ display_id }};
+    var self = map_{{ display_id }};
     self.map = new OpenLayers.Map('map_{{ display_id }}');
     self.layer = new OpenLayers.Layer.OSM("Simple OSM Map");
     self.map.addLayer(self.layer);
@@ -45,6 +45,15 @@
 	}),
 	styleMap: styles
     });
+
+    function selected (evt) {
+	console.log([evt, this.name]);
+    }
+    vectors.events.register("featureselected", vectors, selected);
+
+    var control = new OpenLayers.Control.SelectFeature(vectors);
+    self.map.addControl(control);
+    control.activate();
 
     self.map.addLayer(vectors);
   });
