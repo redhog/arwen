@@ -300,6 +300,12 @@ DEBUG_TOOLBAR_CONFIG = {
 
 DEFAULT_FROM_EMAIL="root@localhost"
 
+for app in LOCAL_APPS:
+    filename = os.path.join(PROJECT_ROOT, 'apps', app, '__settings__.py')
+    if os.path.isfile(filename):
+        with open(filename) as f:
+            exec f
+
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.
 try:

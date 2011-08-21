@@ -83,7 +83,12 @@ class LinkableModelMixin(LinkableObjectMixin):
             field = getattr(cls, name, None)
 
             if isinstance(field, django.db.models.fields.related.ForeignRelatedObjectsDescriptor):
-                res[name] = field.related.field.verbose_related_name
+                if hasattr(field.related.field, 'verbose_related_name'):
+                    res[name] = field.related.field.verbose_related_name
+                elif hasattr(field.related.field, 'verbose_name'):
+                    res[name] = "reverse for " + field.related.field.verbose_name
+                else:
+                    res[name] = "reverse for " + field.related.field.name
             elif isinstance(field, django.db.models.fields.related.ReverseSingleRelatedObjectDescriptor) and not issubclass(cls, field.field.rel.to):
                 res[name] = field.field.verbose_name
             elif isinstance(field, django.db.models.fields.related.SingleRelatedObjectDescriptor) and not issubclass(field.related.model, cls):
