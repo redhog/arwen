@@ -20,10 +20,14 @@ class Node(fcdjangoutils.signalautoconnectmodel.SignalAutoConnectModel, linkable
 
 class NodeVersion(fcdjangoutils.signalautoconnectmodel.SignalAutoConnectModel, linkableobject.models.LinkableModelMixin):
     node = django.db.models.ForeignKey(Node, related_name="versions")
+    node.display_context = ['display']
+    node.display_inline = True
 
     timestamp = django.db.models.DateTimeField(_('timestamp'), auto_now_add = True)
     content = django.db.models.TextField(_('content'))
     owner = django.db.models.ForeignKey(django.contrib.auth.models.User, related_name="node_versions")
+
+    #tags = django.db.models.ManyToManyField(Node, related_name="tagged")
 
     @property
     def slug(self):

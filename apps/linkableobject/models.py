@@ -77,23 +77,38 @@ class LinkableModelMixin(LinkableObjectMixin):
     def get_link_fields(cls, display_context):
         res = {}
         for name in dir(cls):
-            if name.endswith("__display_context"): continue
-            field_display_context = getattr(cls, "%s__display_context" % (name,), name.split('_'))
-            if not is_prefix(display_context, field_display_context): continue
+            #if name.endswith("__display_context"): continue
             field = getattr(cls, name, None)
+            if not isinstance(field, (django.db.models.fields.related.ForeignRelatedObjectsDescriptor,
+                                      django.db.models.fields.related.ReverseSingleRelatedObjectDescriptor,
+                                      django.db.models.fields.related.SingleRelatedObjectDescriptor)): continue
+            field_descriptor = getattr(field, "field", None)
 
-            if isinstance(field, django.db.models.fields.related.ForeignRelatedObjectsDescriptor):
-                if hasattr(field.related.field, 'verbose_related_name'):
-                    res[name] = field.related.field.verbose_related_name
-                elif hasattr(field.related.field, 'verbose_name'):
-                    res[name] = "reverse for " + field.related.field.verbose_name
-                else:
-                    res[name] = "reverse for " + field.related.field.name
-            elif isinstance(field, django.db.models.fields.related.ReverseSingleRelatedObjectDescriptor) and not issubclass(cls, field.field.rel.to):
-                res[name] = field.field.verbose_name
-            elif isinstance(field, django.db.models.fields.related.SingleRelatedObjectDescriptor) and not issubclass(field.related.model, cls):
-                import pdb
-                pdb.set_trace()
+            field_display_context = getattr(field_descriptor, "display_context", name.split('_'))
+            if not is_prefix(display_context, field_display_context): continue
+
+            if getattr(field_descriptor, "display_inline", False):
+                if isinstance(field, django.db.models.fields.related.ForeignRelatedObjectsDescriptor):
+                    import pdb
+                    pdb.set_trace()
+                elif isinstance(field, django.db.models.fields.related.ReverseSingleRelatedObjectDescriptor) and not issubclass(cls, field.field.rel.to):
+                    res.update(field.field.related.parent_model.get_link_fields(display_context))
+                elif isinstance(field, django.db.models.fields.related.SingleRelatedObjectDescriptor) and not issubclass(field.related.model, cls):
+                    import pdb
+                    pdb.set_trace()
+            else:
+                if isinstance(field, django.db.models.fields.related.ForeignRelatedObjectsDescriptor):
+                    if hasattr(field.related.field, 'verbose_related_name'):
+                        res[name] = field.related.field.verbose_related_name
+                    elif hasattr(field.related.field, 'verbose_name'):
+                        res[name] = "reverse for " + field.related.field.verbose_name
+                    else:
+                        res[name] = "reverse for " + field.related.field.name
+                elif isinstance(field, django.db.models.fields.related.ReverseSingleRelatedObjectDescriptor) and not issubclass(cls, field.field.rel.to):
+                    res[name] = field.field.verbose_name
+                elif isinstance(field, django.db.models.fields.related.SingleRelatedObjectDescriptor) and not issubclass(field.related.model, cls):
+                    import pdb
+                    pdb.set_trace()
 
         return res
 

@@ -1,5 +1,8 @@
 {% load linkableobject_tags %}
+{% load widgettag_tags %}
+{% load datatypes %}
 
+{% with STATIC_URL|aadd:"css/linkableobject/linkableobject.css" as url %}{% widget_addcssfile url %}{% endwith %}
 <div class="object">
   <h1>{% display_link obj display_context %}</h1>
   {% if obj.description %}
