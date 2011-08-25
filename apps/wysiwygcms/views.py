@@ -12,6 +12,7 @@ import pinax.core.utils
 import django.contrib.messages
 import django.http
 import django.core.urlresolvers
+import django.forms
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -32,6 +33,11 @@ def view_node(request, slug, version_id = None):
         {"node_version": node_version},
         django.template.RequestContext(request))
 
+class NodeVersionForm(django.forms.ModelForm):
+    class Meta:
+        model = wysiwygcms.models.NodeVersion
+        exclude = ('node','owner')
+
 def edit_node(request, slug):
     nodes = wysiwygcms.models.Node.objects.filter(slug=slug)
     node = nodes and nodes[0] or None
@@ -43,10 +49,17 @@ def edit_node(request, slug):
         if not node:
             node = wysiwygcms.models.Node(slug = slug)
             node.save()
-        wysiwygcms.models.NodeVersion(node = node, content = request.POST['content'], owner = request.user).save()
+        form = NodeVersionForm(request.POST)
+        node_version = form.save(commit = False)
+        node_version.node = node
+        node_version.owner = request.user
+        node_version.save()
+        form.save_m2m()
         return django.shortcuts.redirect(node)
+    else:
+        form = NodeVersionForm(instance = node_version)
 
     return django.shortcuts.render_to_response(
         "wysiwygcms/edit_node.html",
-        {"node_version": node_version},
+        {"node_version": node_version, "form": form},
         django.template.RequestContext(request))

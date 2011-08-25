@@ -8,12 +8,14 @@
 
   <form method="post">
     {% csrf_token %}
-    <textarea name="content" id="content" rows="10" cols="50">{{ node_version.content }}</textarea>
-    <script type="text/javascript">
-      CKEDITOR.config.entities_additional = '';
-      CKEDITOR.replace('content');
-    </script>
+    <table>
+      {{ form.as_table }}
+    </table>
     <br><br>
     <button type="submit">Save</button>
   </form>
+  <script type="text/javascript">
+    CKEDITOR.config.entities_additional = '';
+    CKEDITOR.replace('content');
+  </script>
 {% endblock %}
