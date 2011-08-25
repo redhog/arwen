@@ -105,12 +105,9 @@ class LinkableModelMixin(LinkableObjectMixin):
         def merge_values(data1, data2):
             for name, item_data in data2.iteritems():
                 if name not in data1: 
-                    data1[name] = {}
-                if 'values' not in data1[name]:
+                    data1[name] = dict(item_data)
                     data1[name]['values'] = []
                 data1[name]['values'].extend(item_data['values'])
-
-
         def get_values(model, data):
             for name, item_data in data.items():
                 value = getattr(model, name, None)
