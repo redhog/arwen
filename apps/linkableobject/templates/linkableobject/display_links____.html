@@ -4,7 +4,7 @@
   <h1>{{ linkset.description }}</h1>
   <ul>
     {% for link in linkset.values %}
-      <li>{% display_link link display_context %}</li>
+      <li>{% display_link link.model display_context %}</li>
     {% endfor %}
   </ul>
 {% endfor %}

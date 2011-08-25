@@ -11,7 +11,7 @@ class Node(fcdjangoutils.signalautoconnectmodel.SignalAutoConnectModel, linkable
         return django.core.urlresolvers.reverse("wysiwygcms.views.view_node", kwargs={"slug": self.slug})
 
     slug = django.db.models.SlugField(_('slug'))
-    latest_version = django.db.models.ForeignKey("NodeVersion", related_name="dummy1", blank=True, null=True)
+    latest_version = django.db.models.ForeignKey("NodeVersion", related_name="dummy1", verbose_name="Latest version", blank=True, null=True)
 
     def __unicode__(self):
         if self.latest_version is not None:
@@ -19,15 +19,23 @@ class Node(fcdjangoutils.signalautoconnectmodel.SignalAutoConnectModel, linkable
         return "%s is empty" % self.slug
 
 class NodeVersion(fcdjangoutils.signalautoconnectmodel.SignalAutoConnectModel, linkableobject.models.LinkableModelMixin):
-    node = django.db.models.ForeignKey(Node, related_name="versions")
+    def get_absolute_url(self, group=None):
+        return django.core.urlresolvers.reverse("wysiwygcms.views.view_node", kwargs={"slug": self.slug, "version_id": self.id})
+
+    node = django.db.models.ForeignKey(Node, related_name="versions", verbose_name="Node")
+    node.verbose_related_name = "Versions"
     node.display_context = ['display']
     node.display_inline = True
 
     timestamp = django.db.models.DateTimeField(_('timestamp'), auto_now_add = True)
     content = django.db.models.TextField(_('content'))
-    owner = django.db.models.ForeignKey(django.contrib.auth.models.User, related_name="node_versions")
+    owner = django.db.models.ForeignKey(django.contrib.auth.models.User, related_name="node_versions", verbose_name="Owner")
+    owner.verbose_related_name = "Node versions"
 
-    #tags = django.db.models.ManyToManyField(Node, related_name="tagged")
+    tags = django.db.models.ManyToManyField(Node, related_name="tagged", verbose_name="Tags")
+    tags.verbose_related_name = "Nodes tagged with this node"
+    tags.display_context = ['display']
+    tags.related_display_context = ['display']
 
     @property
     def slug(self):

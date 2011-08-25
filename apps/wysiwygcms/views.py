@@ -15,12 +15,18 @@ import django.core.urlresolvers
 from django.utils.translation import ugettext_lazy as _
 
 
-def view_node(request, slug):
+def view_node(request, slug, version_id = None):
+    node_version = None
     nodes = wysiwygcms.models.Node.objects.filter(slug=slug)
-    if not nodes or not nodes[0].latest_version:
+    if nodes:
+        node_version = nodes[0].latest_version
+        if version_id is not None:
+            node_versions = nodes[0].versions.filter(id = version_id)
+            if node_versions:
+                node_version = node_versions[0]
+    if not node_version:
         return django.shortcuts.redirect("wysiwygcms.views.edit_node", slug=slug)
 
-    node_version = nodes[0].latest_version
     return django.shortcuts.render_to_response(
         "wysiwygcms/view_node.html",
         {"node_version": node_version},

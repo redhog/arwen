@@ -77,49 +77,58 @@ class LinkableModelMixin(LinkableObjectMixin):
     def get_link_fields(cls, display_context):
         res = {}
         for name in dir(cls):
-            #if name.endswith("__display_context"): continue
-            field = getattr(cls, name, None)
-            if not isinstance(field, (django.db.models.fields.related.ForeignRelatedObjectsDescriptor,
-                                      django.db.models.fields.related.ReverseSingleRelatedObjectDescriptor,
-                                      django.db.models.fields.related.SingleRelatedObjectDescriptor)): continue
-            field_descriptor = getattr(field, "field", None)
+            clsfield = getattr(cls, name, None)
+            if hasattr(clsfield, 'field'):
+                field = clsfield.field
+                othercls = field.related.parent_model
+                reverse = False
+            elif hasattr(clsfield, 'related'):
+                field = clsfield.related.field
+                othercls = clsfield.related.parent_model
+                reverse = True
+            else:
+                continue
+            revprefix = ['', 'related_'][reverse]
+            namepattern = ['%s', 'reverse of %s'][reverse]
 
-            field_display_context = getattr(field_descriptor, "display_context", name.split('_'))
+            field_display_context = getattr(field, revprefix + "display_context", name.split('_'))
             if not is_prefix(display_context, field_display_context): continue
 
-            if getattr(field_descriptor, "display_inline", False):
-                if isinstance(field, django.db.models.fields.related.ForeignRelatedObjectsDescriptor):
-                    import pdb
-                    pdb.set_trace()
-                elif isinstance(field, django.db.models.fields.related.ReverseSingleRelatedObjectDescriptor) and not issubclass(cls, field.field.rel.to):
-                    res.update(field.field.related.parent_model.get_link_fields(display_context))
-                elif isinstance(field, django.db.models.fields.related.SingleRelatedObjectDescriptor) and not issubclass(field.related.model, cls):
-                    import pdb
-                    pdb.set_trace()
-            else:
-                if isinstance(field, django.db.models.fields.related.ForeignRelatedObjectsDescriptor):
-                    if hasattr(field.related.field, 'verbose_related_name'):
-                        res[name] = field.related.field.verbose_related_name
-                    elif hasattr(field.related.field, 'verbose_name'):
-                        res[name] = "reverse for " + field.related.field.verbose_name
-                    else:
-                        res[name] = "reverse for " + field.related.field.name
-                elif isinstance(field, django.db.models.fields.related.ReverseSingleRelatedObjectDescriptor) and not issubclass(cls, field.field.rel.to):
-                    res[name] = field.field.verbose_name
-                elif isinstance(field, django.db.models.fields.related.SingleRelatedObjectDescriptor) and not issubclass(field.related.model, cls):
-                    import pdb
-                    pdb.set_trace()
-
+            res[name] = {'description': getattr(field, "verbose_%sname" % (revprefix,),
+                                                getattr(field, "%sname" % (revprefix,),
+                                                        namepattern % getattr(field, "verbose_name", field.name)))}
+            if getattr(field, revprefix + "display_inline", False):
+                res[name]['fields'] = othercls.get_link_fields(display_context)
         return res
 
-    def get_links(self, display_context):
-        res = self.get_link_fields(display_context)
-        for name, description in res.iteritems():
-            value = getattr(self, name, None)
-            t = type(value)
-            res[name] = {'description': description}
-            if t.__name__ == "RelatedManager":
-                res[name]['values'] = value.all()
-            else:
-                res[name]['values'] = [value]
-        return res
+    def get_links(self, display_context, flatten = True):
+        def merge_values(data1, data2):
+            for name, item_data in data2.iteritems():
+                if name not in data1: 
+                    data1[name] = {}
+                if 'values' not in data1[name]:
+                    data1[name]['values'] = []
+                data1[name]['values'].extend(item_data['values'])
+
+
+        def get_values(model, data):
+            for name, item_data in data.items():
+                value = getattr(model, name, None)
+                t = type(value)
+                if t.__name__ in ("RelatedManager", "ManyRelatedManager"):
+                    item_data['values'] = [{'model': submodel} for submodel in value.all()]
+                else:
+                    item_data['values'] = [{'model': value}]
+                if 'fields' in item_data: # display inline
+                    for value in item_data['values']:
+                        value['fields'] = dict(item_data['fields'])
+                        get_values(value['model'], value['fields'])
+                    if flatten:
+                        del data[name]
+                        for value in item_data['values']:
+                            merge_values(data, value['fields'])
+
+        data = self.get_link_fields(display_context)
+        get_values(self, data)
+
+        return data
