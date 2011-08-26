@@ -29,197 +29,130 @@ def has_openid(request):
     return _has_openid(request)
 pinax.apps.account.utils.has_openid = has_openid
 
-def group_and_bridge(request):
-    """
-    Given the request we can depend on the GroupMiddleware to provide the
-    group and bridge.
-    """
-    
-    # be group aware
-    group = getattr(request, "group", None)
-    if group:
-        bridge = request.bridge
-    else:
-        bridge = None
-    
-    return group, bridge
+def event(request, slug):
+    events = booking.models.Event.objects.all()
 
-def group_context(group, bridge):
-    # @@@ use bridge
-    ctx = {
-        "group": group,
-    }
-    if group:
-        ctx["group_base"] = bridge.group_base_template()
-    return ctx
-
-def group_is_member(request, group):
-    if not request.user.is_authenticated():
-        return False
-    else:
-        if group:
-            return group.user_is_member(request.user)
-        else:
-            return True
-
-
-def event(request, event_id = None):
-    group, bridge = group_and_bridge(request)
-    is_member = group_is_member(request, group)
-
-    if group:
-        events = group.content_objects(booking.models.Event)
-    else:
-        events = booking.models.Event.objects.all()
-
-    if event_id is not None:
-        e = events.get(id = event_id)
-
+    if slug is not None:
         u = request.user
+        es = events.filter(slug = slug)
 
-        if request.method == "POST":
-            form = booking.forms.EditEventForm(request.user, group, request.POST, instance=e)
-            if e.owner.id == u.id and form.is_valid():
-                e = form.save()
-                if form.cleaned_data['add_date']:
-                    if not e.dates.filter(date = form.cleaned_data['add_date']).count():
-                        booking.models.EventDate(date=form.cleaned_data['add_date'], event=e).save()
-
-            username = request.POST['username'].lower()
-            email = request.POST['email'].lower()
-            phone = request.POST['phone']
-            dates = [datetime.datetime(*[int(x) for x in day.split("-")]) for day in request.POST.getlist("days")]
-
-            if u.is_anonymous():
-                u = django.contrib.auth.models.User(username=username, email=email)
-                u.set_unusable_password()
-                u.save()
-
-                temp_key = django.contrib.auth.tokens.default_token_generator.make_token(u)
-                password_reset = pinax.apps.account.models.PasswordReset(user=u, temp_key=temp_key)
-                password_reset.save()
-
-                # send the password reset email
-                message =  django.template.loader.render_to_string("booking/new_account_message.txt", {
-                    "user": u,
-                    "uid": django.utils.http.int_to_base36(u.id),
-                    "temp_key": temp_key,
-                    "domain": unicode(django.contrib.sites.models.Site.objects.get_current().domain),
-                })
-                subject, message = message.split("\n\n", 1)
-
-                send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [u.email], priority="high")
-
-            u.email = email
-            u.username = username
-
-            u.save()
-
-            try:
-                i = u.info
-            except u.DoesNotExist:
-                i = None
-            if i:
-                i.phone = phone
-                i.save()
-            else:
-                account.models.UserInfo(user = u, phone = phone).save()
-
-            try:
-                event_booking = u.event_bookings.get(event__id = event_id)
-            except:
-                event_booking = booking.models.EventBooking(booker=u, event=e)
-            event_booking.save()
-
-            for date in event_booking.dates.all():
-                date.delete()
-
-            for date in dates:
-                d = e.dates.get(date=date)
-                booking.models.EventDateBooking(event_booking = event_booking, date=d).save()
-
+        if es:
+            return edit_event(request, es[0])
         else:
-            form = booking.forms.EditEventForm(request.user, group, instance=e)
-
-        return django.shortcuts.render_to_response(
-            "booking/event.html", 
-            {
-                "event": e,
-                "user": u,
-                "group": group,
-                "is_member": is_member,
-                'static_url': settings.STATIC_URL,
-                "form": form,
-                },
-            context_instance=django.template.RequestContext(request))
-
-            
+            return add_event(request, slug)
     else:
-        return django.shortcuts.render_to_response("booking/event_list.html", {
-            "group": group,
-            "events": events,
-            "user": request.user,
-            "is_member": is_member,
-        }, context_instance=django.template.RequestContext(request))
+        return list_events(request, events)
 
-def remove_event_date(request, event_id, date_id):
-    group, bridge = group_and_bridge(request)
+def list_events(request, events):
+    return django.shortcuts.render_to_response("booking/event_list.html", {
+        "events": events,
+        "user": request.user,
+    }, context_instance=django.template.RequestContext(request))
 
-    is_member = group_is_member(request, group)
+def remove_event_date(request, slug, date_id):
+    events = booking.models.Event.objects.all()
 
-    if group:
-        events = group.content_objects(booking.models.Event)
-    else:
-        events = booking.models.Event.objects.all()
-
-    e = events.get(id = event_id)
+    e = events.get(slug = slug)
     u = request.user
     assert e.owner.id == u.id
 
     for date in e.dates.filter(id = date_id):
         date.delete()
     
-    kwarg = {"event_id":e.id}
-    if group:
-        redirect_to = bridge.reverse("booking_event", group, kwarg)
-    else:
-        redirect_to = django.core.urlresolvers.reverse("booking_event", kwarg)
+    redirect_to = django.core.urlresolvers.reverse("booking_event", kwargs = {"slug":e.slug})
             
     return django.http.HttpResponseRedirect(redirect_to)
 
+def edit_event(request, e):
+    u = request.user
+    if request.method == "POST":
+        form = booking.forms.EditEventForm(u, request.POST, instance=e)
+        if e.owner.id == u.id and form.is_valid():
+            e = form.save()
+            if form.cleaned_data['add_date']:
+                if not e.dates.filter(date = form.cleaned_data['add_date']).count():
+                    booking.models.EventDate(date=form.cleaned_data['add_date'], event=e).save()
 
-def add_event(request):
-    group, bridge = group_and_bridge(request)
-    is_member = group_is_member(request, group)
+        username = request.POST['username'].lower()
+        email = request.POST['email'].lower()
+        phone = request.POST['phone']
+        dates = [datetime.datetime(*[int(x) for x in day.split("-")]) for day in request.POST.getlist("days")]
 
+        if u.is_anonymous():
+            u = django.contrib.auth.models.User(username=username, email=email)
+            u.set_unusable_password()
+            u.save()
+
+            temp_key = django.contrib.auth.tokens.default_token_generator.make_token(u)
+            password_reset = pinax.apps.account.models.PasswordReset(user=u, temp_key=temp_key)
+            password_reset.save()
+
+            # send the password reset email
+            message =  django.template.loader.render_to_string("booking/new_account_message.txt", {
+                "user": u,
+                "uid": django.utils.http.int_to_base36(u.id),
+                "temp_key": temp_key,
+                "domain": unicode(django.contrib.sites.models.Site.objects.get_current().domain),
+            })
+            subject, message = message.split("\n\n", 1)
+
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [u.email], priority="high")
+
+        u.email = email
+        u.username = username
+
+        u.save()
+
+        try:
+            i = u.info
+        except u.DoesNotExist:
+            i = None
+        if i:
+            i.phone = phone
+            i.save()
+        else:
+            account.models.UserInfo(user = u, phone = phone).save()
+
+        try:
+            event_booking = u.event_bookings.get(event__id = e.id)
+        except:
+            event_booking = booking.models.EventBooking(booker=u, event=e)
+        event_booking.save()
+
+        for date in event_booking.dates.all():
+            date.delete()
+
+        for date in dates:
+            d = e.dates.get(date=date)
+            booking.models.EventDateBooking(event_booking = event_booking, date=d).save()
+
+        return django.http.HttpResponseRedirect(django.core.urlresolvers.reverse("booking_event", kwargs = {"slug":e.slug}))
+    else:
+        form = booking.forms.EditEventForm(u, instance=e)
+
+    return django.shortcuts.render_to_response(
+        "booking/event.html", 
+        {
+            "event": e,
+            "user": u,
+            'static_url': settings.STATIC_URL,
+            "form": form,
+            },
+        context_instance=django.template.RequestContext(request))
+
+
+def add_event(request, slug):
     if request.method == "POST":
         if request.user.is_authenticated():
-            form = booking.forms.EventForm(request.user, group, request.POST)
+            form = booking.forms.EventForm(request.user, request.POST)
             if form.is_valid():
                 event = form.save(commit=False)
-                event.group = group
                 event.owner = request.user
                 event.save()
                 django.contrib.messages.add_message(request, django.contrib.messages.SUCCESS,
-                                                    _("added event '%s'") % event.name
-                                                    )
-                kwarg = {"event_id":event.id}
-                if group:
-                    redirect_to = bridge.reverse("booking_event", group, kwarg)
-                else:
-                    redirect_to = django.core.urlresolvers.reverse("booking_event", kwarg)
-
-                return django.http.HttpResponseRedirect(redirect_to)
-
-
-    form = booking.forms.EventForm(request.user, group)
-    
-    ctx = group_context(group, bridge)
-    ctx.update({
-        "is_member": is_member,
-        "form": form,
-    })
-    
-    return django.shortcuts.render_to_response("booking/event_add.html", django.template.RequestContext(request, ctx))
+                                                    _("added event '%s'") % event.name)
+                return django.http.HttpResponseRedirect(django.core.urlresolvers.reverse("booking_event", kwargs = {"slug":event.slug}))
+    form = booking.forms.EventForm(request.user)    
+    return django.shortcuts.render_to_response("booking/event_add.html", {"form": form}, context_instance=django.template.RequestContext(request))
 
 
