@@ -1,0 +1,16 @@
+.object_header_expand {
+  display: none;
+  position: absolute;
+  border: 1px solid black;
+  padding: 5px;
+  background: white;
+}
+.object_header:hover .object_header_expand {
+  display: inherit;
+}
+.object_header .object_links {
+  padding-top: 5px;
+}
+.object_header .object_links h1 {
+  font-size: 12pt;
+}

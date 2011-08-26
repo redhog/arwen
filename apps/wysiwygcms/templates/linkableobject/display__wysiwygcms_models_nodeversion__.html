@@ -8,13 +8,20 @@
 {% load datatypes %}
 
 {% with STATIC_URL|aadd:"css/linkableobject/linkableobject.css" as url %}{% widget_addcssfile url %}{% endwith %}
+{% with STATIC_URL|aadd:"css/wysiwygcms/wysiwygcms.css" as url %}{% widget_addcssfile url %}{% endwith %}
+
 <div class="object">
-  <h1>{% display_link obj display_context %} [<a href="{% url wysiwygcms.views.edit_node slug=obj.slug %}">edit</a>]</h1>
+  <div class="object_header">
+    <div class="object_header_expand">
+      [<a href="{% url wysiwygcms.views.edit_node slug=obj.slug %}">edit</a>]
+      <div class="object_links">
+        {% display_links obj display_context %}
+      </div>
+    </div>
+    <h1>{% display_link obj display_context %}</h1>
+  </div>
   {% if obj.description %}
     {{ obj.description }}
   {% endif %}
   {{ content }}
-  <div class="links">
-    {% display_links obj display_context %}
-  </div>
 </div>

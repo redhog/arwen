@@ -1,4 +1,8 @@
-.object .object {
+.object {
   padding: 10px;
+}
+
+.object:hover {
+  padding: 9px;
   border: 1px solid black;
 }
